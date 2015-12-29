@@ -211,24 +211,47 @@
 	};
 
 	var Timer = function(args) {
+		this.currentLevel = 0;
+		this.levelTimings = [10, 20, 30, 45, 60];
+		this.levelTexts = ["LINE", "TRIANGLE", "SQUARE", "PENTAGON", "HEXAGON"];
 		this.element;
+		this.timeText;
 		this.label;
-		this.text;
+		this.level;
+		this.levelText;
+		this.levelProgressContainer;
+		this.levelProgress;
 
-		this.init = function() {
+		this.init = function(colors) {
 			this.element = document.createElement('div');
 			this.element.classList.add('hjs');
 			this.element.classList.add('timer');
 			document.getElementsByTagName('body')[0].appendChild(this.element);
 
-			this.text = document.createElement('span');
-			this.element.appendChild(this.text);
+			this.timeText = document.createElement('span');
+			this.element.appendChild(this.timeText);
 
 			this.label = document.createElement('div');
 			this.label.classList.add('hjs');
 			this.label.classList.add('label');
 			this.label.innerHTML = "TIME";
 			this.element.appendChild(this.label);
+
+			this.level = document.createElement('div');
+			this.level.classList.add('hjs');
+			this.level.classList.add('level');
+			document.getElementsByTagName('body')[0].appendChild(this.level);
+
+			this.levelText = document.createElement('span');
+			this.levelText.innerHTML = "POINT";
+			this.level.appendChild(this.levelText);
+
+			this.levelProgressContainer = document.createElement('div');
+			this.level.appendChild(this.levelProgressContainer);
+
+			this.levelProgress = document.createElement('div');
+			this.levelProgress.style.backgroundColor = colors[1];
+			this.levelProgressContainer.appendChild(this.levelProgress);
 			return this;
 		};
 
@@ -236,7 +259,20 @@
 			var seconds = Math.floor(_frameCount / 60);
 			var dec = Math.floor(_frameCount - (seconds * 60));
 			dec = ('0' + dec).slice(-2);
-			this.text.innerHTML = seconds + ':' + dec;
+			this.timeText.innerHTML = seconds + ':' + dec;
+
+			var percent = (_frameCount / (this.levelTimings[this.currentLevel] * 60)) * 100;
+			if (this.currentLevel > 0)
+				percent = ((_frameCount - (this.levelTimings[this.currentLevel - 1] * 60)) / ((this.levelTimings[this.currentLevel] * 60) - (this.levelTimings[this.currentLevel - 1] * 60))) * 100;
+			percent %= 100;
+			this.levelProgress.style.width = percent + '%';
+
+			for (var i = 0; i < this.levelTimings.length; i++) {
+				if (seconds == this.levelTimings[i] && this.currentLevel == i) {
+					this.currentLevel++;
+					this.levelText.innerHTML = this.levelTexts[i];
+				}
+			};
 		};
 
 		return this;
@@ -248,9 +284,15 @@
 		if (typeof args.canvas === 'undefined')
 			throw new Error("No canvas provided");
 
+		this.args = args;
+
 		this.canvas = args.canvas;
 		this.ctx = this.canvas.getContext('2d');
-		this.angleSpeed = args.angleSpeed || 2;
+		this.angleSpeed = typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
+		this.walls = [null, null, null, null];
+		this.wallColors = args.wallColors || ["#1EAAA5", "#4EFC96"];
+		this.currentWallColor = this.wallColors[0];
+		this.backgroundColors = args.backgroundColors || ["#0A2727", "#103D3D"];
 		this.rays = new Rays({
 			amount: 6
 		});
@@ -262,26 +304,23 @@
 		this.cursor = new Cursor({
 			canvas: this.canvas,
 			size: 7,
-			color: "#6EA796",
+			color: this.wallColors[0],
 			strokeColor: "rgba(0,0,0,0)",
 			strokeWidth: 1,
 			radius: 75,
-			speed: 5
+			speed: args.cursorSpeed || 5
 		});
 		this.wallSpeed = args.wallSpeed || 2;
 		this.minDist = Math.sqrt(
 			Math.pow(this.canvas.width, 2) +
 			Math.pow(this.canvas.height, 2)
 		) / 2;
-		this.walls = [null, null, null, null];
-		this.timer = new Timer().init(this.canvas);
-		this.wallColors = args.wallColors || ["#1EAAA5", "#4EFC96"];
-		this.currentWallColor = this.wallColors[0];
-		this.backgroundColors = args.backgroundColors || ["#0A2727", "#103D3D"];
+		this.timer = new Timer().init(this.wallColors);
 
 		var _utils = new Utils();
 		var _animation_id_;
 		var _frameCount = 0;
+		var _isDead = false;
 		var COLOR_DARK = 0, COLOR_LIGHT = 1;
 
 		for (var i = 0; i < this.walls.length; i++) {
@@ -291,9 +330,25 @@
 			this.walls[i].generatePattern(6);
 		};
 
+		this.init = function() {
+			this.angleSpeed = typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
+			if (Date.now() % 2 == 0)
+				this.angleSpeed *= -1;
+			this.wallSpeed = args.wallSpeed || 2;
+			this.cursor.size = 7;
+			this.timer.currentLevel = 0;
+			this.timer.levelText.innerHTML = "POINT";
+
+			return this;
+		};
+
 		this.play = function() {
 			var _this = this;
+			_isDead = false;
 			document.onkeydown = function(event) {
+				var key = event.which || event.keyCode;
+				if (key == 27)
+					_isDead = true;
 				_this.moveCursor(event);
 			};
 			document.onkeyup = function(event) {
@@ -316,15 +371,27 @@
 				this.cursor.dir = 0;
 		}
 
+		this.die = function() {
+			this.hexagon.draw(this.canvas, this.backgroundColors[COLOR_DARK], this.currentWallColor, 7);
+			this.cursor.draw();
+			this.cursor.dir = 0;
+			document.onkeydown = null;
+			document.onkeyup = null;
+			_frameCount = 0;
+			_animation_id_ = requestAnimationFrame(_dead.bind(this));
+		};
+
 		var _update = function() {
-			var _isDead = false,
-				_fc_acc = (_frameCount % 120) <= 60 ? (_frameCount % 120) : 60 - ((_frameCount % 120) - 60);
+			var _fc_acc = (_frameCount % 120) <= 60 ? (_frameCount % 120) : 60 - ((_frameCount % 120) - 60);
 			this.currentWallColor = _utils.interpolateColor(
 				this.wallColors[0],
 				this.wallColors[1],
 				60,
 				_fc_acc
 			);
+
+			if ((Math.floor(Math.random() * 1000)) < 1)
+				this.angleSpeed *= -1;
 
 			this.ctx.fillStyle = this.backgroundColors[COLOR_DARK];
 			this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -349,31 +416,28 @@
 				this.hexagon.size -= 50;
 			this.timer.update(_frameCount);
 
-			if (_isDead) {
-				var _this = this;
-				this.hexagon.draw(this.canvas, this.backgroundColors[COLOR_DARK], this.currentWallColor, 7);
-				this.cursor.draw();
-				this.cursor.dir = 0;
-				document.onkeydown = null;
-				document.onkeyup = null;
-				_animation_id_ = requestAnimationFrame(_dead.bind(this));
-				_frameCount = 0;
-				return false;
-			}
+			if (_isDead)
+				return this.die();
 
 			_frameCount++;
 			_animation_id_ = requestAnimationFrame(_update.bind(this));
 		};
 
 		var _dead = function() {
-			if (this.angleSpeed > 0)
+			if (this.angleSpeed > 0) {
 				this.angleSpeed -= .01;
-			if (this.angleSpeed < 0)
-				this.angleSpeed = 0;
+				if (this.angleSpeed < 0)
+					this.angleSpeed = 0;
+			}
+			else if (this.angleSpeed < 0) {
+				this.angleSpeed += .01;
+				if (this.angleSpeed > 0)
+					this.angleSpeed = 0;
+			}
 			if (this.wallSpeed > 0)
 				this.wallSpeed = 0;
 
-			if (_frameCount == (.3 * 60))
+			if (_frameCount == (.5 * 60))
 				this.wallSpeed = -50;
 			if (_frameCount >= (.8 * 60) && this.hexagon.size < 1000)
 				this.hexagon.size += 50;
@@ -382,10 +446,7 @@
 				cancelAnimationFrame(_animation_id_);
 				window.onkeydown = function(event) {
 					var key = event.which || event.keyCode;
-					if (key == 32) {
-						_this.wallSpeed = 5;
-						_this.angleSpeed = 1.2;
-						_this.timer.start = Date.now();
+					if (key == 32 || key == 38) {
 						for (var i = 0; i < _this.walls.length; i++) {
 							_this.walls[i] = new Wall({
 								distance: _this.minDist + ((_this.minDist / 3) * (i + 1))
@@ -393,7 +454,7 @@
 							_this.walls[i].generatePattern(6);
 						};
 						window.onkeydown = null;
-						_this.play();
+						_this.init().play();
 					};
 				};
 				return false;
@@ -413,6 +474,7 @@
 					this.walls[i].generatePattern(6);
 				}
 			}
+			this.cursor.color = _frameCount % 6 < 3 ? this.wallColors[0] : this.wallColors[1];
 			this.cursor.draw();
 			this.hexagon.draw(this.canvas, this.backgroundColors[COLOR_DARK], this.currentWallColor, 7);
 
