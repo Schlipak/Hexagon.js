@@ -394,6 +394,7 @@
 							});
 							_this.walls[i].generatePattern(6);
 						};
+						window.onkeydown = null;
 						_this.play();
 					};
 				};
