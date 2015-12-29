@@ -338,6 +338,7 @@
 			this.cursor.size = 7;
 			this.timer.currentLevel = 0;
 			this.timer.levelText.innerHTML = "POINT";
+			_frameCount = 0;
 
 			return this;
 		};
@@ -411,9 +412,13 @@
 			}
 			this.cursor.color = this.currentWallColor;
 			this.cursor.draw();
+			if (this.cursor.radius > 75)
+				this.cursor.radius -= 25;
+			if (this.cursor.size > 7)
+				this.cursor.size -= 1;
 			this.hexagon.draw(this.canvas, this.backgroundColors[COLOR_DARK], this.currentWallColor, 7);
 			if (this.hexagon.size > 50)
-				this.hexagon.size -= 50;
+				this.hexagon.size -= 25;
 			this.timer.update(_frameCount);
 
 			if (_isDead)
@@ -424,24 +429,27 @@
 		};
 
 		var _dead = function() {
-			if (this.angleSpeed > 0) {
+			if (this.angleSpeed > .4) {
 				this.angleSpeed -= .01;
-				if (this.angleSpeed < 0)
-					this.angleSpeed = 0;
+				if (this.angleSpeed < .4)
+					this.angleSpeed = .4;
 			}
-			else if (this.angleSpeed < 0) {
+			else if (this.angleSpeed < -.4) {
 				this.angleSpeed += .01;
-				if (this.angleSpeed > 0)
-					this.angleSpeed = 0;
+				if (this.angleSpeed > -.4)
+					this.angleSpeed = -.4;
 			}
 			if (this.wallSpeed > 0)
 				this.wallSpeed = 0;
 
 			if (_frameCount == (.5 * 60))
 				this.wallSpeed = -50;
-			if (_frameCount >= (.8 * 60) && this.hexagon.size < 1000)
+			if (_frameCount >= (.8 * 60) && this.hexagon.size < 250) {
 				this.hexagon.size += 50;
-			if (this.hexagon.size >= 1000) {
+				this.cursor.radius += 50;
+				this.cursor.size += 1;
+			}
+			if (this.hexagon.size >= 250) {
 				var _this = this;
 				cancelAnimationFrame(_animation_id_);
 				window.onkeydown = function(event) {
@@ -454,10 +462,11 @@
 							_this.walls[i].generatePattern(6);
 						};
 						window.onkeydown = null;
+						cancelAnimationFrame(_animation_id_);
 						_this.init().play();
+						return;
 					};
 				};
-				return false;
 			}
 
 			this.ctx.fillStyle = this.backgroundColors[COLOR_DARK];
