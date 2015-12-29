@@ -214,7 +214,6 @@
 		this.element;
 		this.label;
 		this.text;
-		this.start = Date.now();
 
 		this.init = function() {
 			this.element = document.createElement('div');
@@ -233,10 +232,9 @@
 			return this;
 		};
 
-		this.update = function(canvas) {
-			var curTime = Date.now() - this.start,
-				seconds = Math.floor(curTime / 1000),
-				dec = Math.floor((curTime - (seconds * 1000)) / 10);
+		this.update = function(_frameCount) {
+			var seconds = Math.floor(_frameCount / 60);
+			var dec = Math.floor(_frameCount - (seconds * 60));
 			dec = ('0' + dec).slice(-2);
 			this.text.innerHTML = seconds + ':' + dec;
 		};
@@ -349,7 +347,7 @@
 			this.hexagon.draw(this.canvas, this.backgroundColors[COLOR_DARK], this.currentWallColor, 7);
 			if (this.hexagon.size > 50)
 				this.hexagon.size -= 50;
-			this.timer.update();
+			this.timer.update(_frameCount);
 
 			if (_isDead) {
 				var _this = this;
