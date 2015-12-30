@@ -1,12 +1,14 @@
 "use strict";
 
+var Utils	= require('src/Utils');
+
 var Timer;
 
 module.exports = Timer = (function() {
 	function Timer(args) {
 		this.currentLevel = 0;
 		this.levelTimings = [10, 20, 30, 45, 60];
-		this.levelTexts = ["LINE", "TRIANGLE", "SQUARE", "PENTAGON", "HEXAGON"];
+		this.levelTexts = ["POINT", "LINE", "TRIANGLE", "SQUARE", "PENTAGON", "HEXAGON"];
 		this.element;
 		this.timeText;
 		this.label;
@@ -15,7 +17,36 @@ module.exports = Timer = (function() {
 		this.levelProgressContainer;
 		this.levelProgress;
 
-		this.init = function(colors) {
+		this.load = function(url) {
+			var _this = this;
+			var data = Utils.getJSON(url, function(data) {
+				if (typeof data === 'undefined') {
+					console.error("HexagonJS @ " + url + ": Can't get data.");
+					return;
+				}
+				if (typeof data.levels === 'undefined') {
+					console.error("HexagonJS @ " + url + ": \"levels\" object not found.");
+					return;
+				}
+				if (typeof data.levels.timings === 'undefined' ||
+					typeof data.levels.texts === 'undefined') {
+					console.error("HexagonJS @ " + url + ": Missing \"timings\" or \"texts\" arrays.");
+					return;
+				}
+				if (data.levels.timings.length != data.levels.texts.length - 1) {
+					console.error("HexagonJS @ " + url + ": Level timings represent the end of each level. There should be one less timings than level names since the last level lasts forever.");
+					return;
+				}
+				this.levelTimings = data.levels.timings;
+				this.levelTexts = data.levels.texts;
+				this.levelText.innerHTML = this.levelTexts[0];
+			}.bind(this));
+		};
+
+		this.init = function(colors, url) {
+			if (typeof url === 'string')
+				this.load(url);
+
 			this.element = document.createElement('div');
 			this.element.classList.add('hjs');
 			this.element.classList.add('timer');
@@ -36,7 +67,7 @@ module.exports = Timer = (function() {
 			document.getElementsByTagName('body')[0].appendChild(this.level);
 
 			this.levelText = document.createElement('span');
-			this.levelText.innerHTML = "POINT";
+			this.levelText.innerHTML = this.levelTexts[0];
 			this.level.appendChild(this.levelText);
 
 			this.levelProgressContainer = document.createElement('div');
@@ -63,7 +94,7 @@ module.exports = Timer = (function() {
 			for (var i = 0; i < this.levelTimings.length; i++) {
 				if (seconds == this.levelTimings[i] && this.currentLevel == i) {
 					this.currentLevel++;
-					this.levelText.innerHTML = this.levelTexts[i];
+					this.levelText.innerHTML = this.levelTexts[this.currentLevel];
 				}
 			};
 		};

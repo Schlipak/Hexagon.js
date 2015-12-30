@@ -22,6 +22,24 @@ var Utils = {
 			color += val;
 		};
 		return color;
+	},
+	getJSON: function getJSON(url, callback) {
+		var xhr = typeof XMLHttpRequest != 'undefined'
+		? new XMLHttpRequest()
+		: new ActiveXObject('Microsoft.XMLHTTP');
+		xhr.open('get', url, true);
+		xhr.onreadystatechange = function() {
+			var status, data;
+			if (xhr.readyState == 4) {
+				status = xhr.status;
+				if (status == 200) {
+					data = JSON.parse(xhr.responseText);
+					callback && callback(data);
+				} else
+					console.error("Error: " + status);
+			}
+		};
+		xhr.send();
 	}
 };
 

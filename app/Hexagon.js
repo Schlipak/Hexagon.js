@@ -1,11 +1,11 @@
 "use strict";
 
-var Utils 			= require('Utils');
-var RegularPolygon 	= require('RegularPolygon');
-var Rays 			= require('Rays');
-var Wall 			= require('Wall');
-var Cursor 			= require('Cursor');
-var Timer 			= require('Timer');
+var Utils 			= require('src/Utils');
+var RegularPolygon 	= require('src/RegularPolygon');
+var Rays 			= require('src/Rays');
+var Wall 			= require('src/Wall');
+var Cursor 			= require('src/Cursor');
+var Timer 			= require('src/Timer');
 
 var Hexagon;
 
@@ -16,55 +16,54 @@ module.exports = Hexagon = (function() {
 		if (typeof args.canvas === 'undefined')
 			throw new Error("No canvas provided");
 
-		this.args = args;
+		this.args 				= args;
 
-		this.canvas = args.canvas;
-		this.ctx = this.canvas.getContext('2d');
-		this.angleSpeed = typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
-		this.walls = [null, null, null, null];
-		this.wallColors = args.wallColors || ["#1EAAA5", "#4EFC96"];
-		this.currentWallColor = this.wallColors[0];
-		this.backgroundColors = args.backgroundColors || ["#0A2727", "#103D3D"];
-		this.rays = new Rays({
-			amount: 6
-		});
-		this.hexagon = new RegularPolygon({
-			canvas: this.canvas,
-			sides: 6,
-			size: 1000
-		});
-		this.cursor = new Cursor({
-			canvas: this.canvas,
-			size: 7,
-			color: this.wallColors[0],
-			strokeColor: "rgba(0,0,0,0)",
-			strokeWidth: 1,
-			radius: 75,
-			speed: args.cursorSpeed || 5
-		});
-		this.wallSpeed = args.wallSpeed || 2;
-		this.minDist = Math.sqrt(
-			Math.pow(this.canvas.width, 2) +
-			Math.pow(this.canvas.height, 2)
-			) / 2;
-		this.timer = new Timer().init(this.wallColors);
+		this.canvas 			= args.canvas;
+		this.ctx 				= this.canvas.getContext('2d');
+		this.angleSpeed 		= typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
+		this.walls 				= [null, null, null, null];
+		this.wallColors 		= args.wallColors || ["#1EAAA5", "#4EFC96"];
+		this.currentWallColor 	= this.wallColors[0];
+		this.backgroundColors 	= args.backgroundColors || ["#0A2727", "#103D3D"];
+		this.rays 				= new Rays({
+									amount: 6
+								});
+		this.hexagon 			= new RegularPolygon({
+									canvas: this.canvas,
+									sides: 6,
+									size: 1000
+								});
+		this.cursor 			= new Cursor({
+									canvas: this.canvas,
+									size: 7,
+									color: this.wallColors[0],
+									strokeColor: "rgba(0,0,0,0)",
+									strokeWidth: 1,
+									radius: 75,
+									speed: args.cursorSpeed || 5
+								});
+		this.wallSpeed 			= args.wallSpeed || 2;
+		this.minDist 			= Math.sqrt(
+									Math.pow(this.canvas.width, 2) +
+									Math.pow(this.canvas.height, 2)
+								) / 2;
+		this.timer 				= new Timer().init(this.wallColors, "timing.JSON");
 
-		var _animation_id_;
-		var _frameCount = 0;
-		var _isDead = false;
-		var COLOR_DARK = 0, COLOR_LIGHT = 1;
+		var _animation_id_,
+			_frameCount = 0,
+			_isDead = false,
+			COLOR_DARK = 0, COLOR_LIGHT = 1;
 
 		for (var i = 0; i < this.walls.length; i++) {
 			this.walls[i] = new Wall({
 				distance: this.minDist + ((this.minDist / 3) * (i + 1))
 			});
-			console.log(this.walls[i]);
 			this.walls[i].generatePattern(6);
 		};
 
 		this.init = function() {
 			this.angleSpeed = typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
-			if (Date.now() % 2 == 0)
+			if (Math.floor(Date.now()) % 2 == 0)
 				this.angleSpeed *= -1;
 			this.wallSpeed = args.wallSpeed || 2;
 			this.cursor.size = 7;
@@ -121,9 +120,9 @@ module.exports = Hexagon = (function() {
 				this.wallColors[1],
 				60,
 				_fc_acc
-				);
+			);
 
-			if ((Math.floor(Math.random() * 1000)) < 1)
+			if ((_frameCount % (5* 60) == 0) && (Math.floor(Math.random() * 100)) < 5)
 				this.angleSpeed *= -1;
 
 			this.ctx.fillStyle = this.backgroundColors[COLOR_DARK];
