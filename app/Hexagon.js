@@ -127,7 +127,7 @@ module.exports = Hexagon = (function() {
 						console.error("HexagonJS @ " + url + ": \"wallColors\" must be an array of strings.");
 				}
 
-				if (typeof data.game.levels !== 'undefined')
+				if (typeof data.levels !== 'undefined')
 					this.timer.load(data);
 
 				if (typeof callback === 'function')
