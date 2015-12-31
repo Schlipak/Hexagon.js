@@ -17,36 +17,30 @@ module.exports = Timer = (function() {
 		this.levelProgressContainer;
 		this.levelProgress;
 
-		this.load = function(url) {
-			var _this = this;
-			var data = Utils.getJSON(url, function(data) {
-				if (typeof data === 'undefined') {
-					console.error("HexagonJS @ " + url + ": Can't get data.");
-					return;
-				}
-				if (typeof data.levels === 'undefined') {
-					console.error("HexagonJS @ " + url + ": \"levels\" object not found.");
-					return;
-				}
-				if (typeof data.levels.timings === 'undefined' ||
-					typeof data.levels.texts === 'undefined') {
-					console.error("HexagonJS @ " + url + ": Missing \"timings\" or \"texts\" arrays.");
-					return;
-				}
-				if (data.levels.timings.length != data.levels.texts.length - 1) {
-					console.error("HexagonJS @ " + url + ": Level timings represent the end of each level. There should be one less timings than level names since the last level lasts forever.");
-					return;
-				}
-				this.levelTimings = data.levels.timings;
-				this.levelTexts = data.levels.texts;
-				this.levelText.innerHTML = this.levelTexts[0];
-			}.bind(this));
+		this.load = function(data) {
+			if (typeof data === 'undefined') {
+				console.error("HexagonJS @ " + url + ": Can't get data.");
+				return;
+			}
+			if (typeof data.levels === 'undefined') {
+				console.error("HexagonJS @ " + url + ": \"levels\" object not found.");
+				return;
+			}
+			if (typeof data.levels.timings === 'undefined' ||
+				typeof data.levels.texts === 'undefined') {
+				console.error("HexagonJS @ " + url + ": Missing \"timings\" or \"texts\" arrays.");
+				return;
+			}
+			if (data.levels.timings.length != data.levels.texts.length - 1) {
+				console.error("HexagonJS @ " + url + ": Level timings represent the end of each level. There should be one less timings than level names since the last level lasts forever.");
+				return;
+			}
+			this.levelTimings = data.levels.timings;
+			this.levelTexts = data.levels.texts;
+			this.levelText.innerHTML = this.levelTexts[0];
 		};
 
-		this.init = function(colors, url) {
-			if (typeof url === 'string')
-				this.load(url);
-
+		this.init = function(colors) {
 			this.element = document.createElement('div');
 			this.element.classList.add('hjs');
 			this.element.classList.add('timer');
@@ -79,17 +73,20 @@ module.exports = Timer = (function() {
 			return this;
 		};
 
-		this.update = function(_frameCount) {
+		this.update = function(_frameCount, color) {
 			var seconds = Math.floor(_frameCount / 60);
 			var dec = Math.floor(_frameCount - (seconds * 60));
 			dec = ('0' + dec).slice(-2);
 			this.timeText.innerHTML = seconds + ':' + dec;
 
 			var percent = (_frameCount / (this.levelTimings[this.currentLevel] * 60)) * 100;
-			if (this.currentLevel > 0)
+			if (this.currentLevel > 0 && this.currentLevel < this.levelTexts.length - 1)
 				percent = ((_frameCount - (this.levelTimings[this.currentLevel - 1] * 60)) / ((this.levelTimings[this.currentLevel] * 60) - (this.levelTimings[this.currentLevel - 1] * 60))) * 100;
-			percent %= 100;
+			if (this.currentLevel == this.levelTexts.length - 1)
+				percent = 100;
+			percent %= 101;
 			this.levelProgress.style.width = percent + '%';
+			this.levelProgress.style.backgroundColor = color;
 
 			for (var i = 0; i < this.levelTimings.length; i++) {
 				if (seconds == this.levelTimings[i] && this.currentLevel == i) {

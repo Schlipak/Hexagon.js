@@ -16,43 +16,45 @@ module.exports = Hexagon = (function() {
 		if (typeof args.canvas === 'undefined')
 			throw new Error("No canvas provided");
 
-		this.args 				= args;
+		/* JS args */
+		this.args = args;
+		this.canvas = args.canvas;
+		this.ctx = this.canvas.getContext('2d');
 
-		this.canvas 			= args.canvas;
-		this.ctx 				= this.canvas.getContext('2d');
-		this.angleSpeed 		= typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
-		this.walls 				= [null, null, null, null];
-		this.wallColors 		= args.wallColors || ["#1EAAA5", "#4EFC96"];
-		this.currentWallColor 	= this.wallColors[0];
-		this.backgroundColors 	= args.backgroundColors || ["#0A2727", "#103D3D"];
-		this.rays 				= new Rays({
-									amount: 6
-								});
-		this.hexagon 			= new RegularPolygon({
-									canvas: this.canvas,
-									sides: 6,
-									size: 1000
-								});
-		this.cursor 			= new Cursor({
-									canvas: this.canvas,
-									size: 7,
-									color: this.wallColors[0],
-									strokeColor: "rgba(0,0,0,0)",
-									strokeWidth: 1,
-									radius: 75,
-									speed: args.cursorSpeed || 5
-								});
-		this.wallSpeed 			= args.wallSpeed || 2;
-		this.minDist 			= Math.sqrt(
-									Math.pow(this.canvas.width, 2) +
-									Math.pow(this.canvas.height, 2)
-								) / 2;
-		this.timer 				= new Timer().init(this.wallColors, "timing.JSON");
+		/* JSON config */
+		this.angleSpeed = 1.2;
+		this.backgroundColors = ["#0A2727", "#103D3D"];
+		this.wallColors = ["#1EAAA5", "#4EFC96"];
+		this.wallSpeed = 5;
+		
+		/* Other members */
+		this.walls = [null, null, null, null];
+		this.currentWallColor = this.wallColors[0];
+		this.rays = new Rays({
+			amount: 6
+		});
+		this.hexagon = new RegularPolygon({
+			canvas: this.canvas,
+			sides: 6,
+			size: 1000
+		});
+		this.cursor = new Cursor({
+			canvas: this.canvas,
+			size: 7,
+			color: this.wallColors[0],
+			radius: 75,
+			speed: 5
+		});
+		this.minDist = Math.sqrt(
+			Math.pow(this.canvas.width, 2) +
+			Math.pow(this.canvas.height, 2)
+		) / 2;
+		this.timer = new Timer().init(this.wallColors);
 
 		var _animation_id_,
-			_frameCount = 0,
-			_isDead = false,
-			COLOR_DARK = 0, COLOR_LIGHT = 1;
+		_frameCount = 0,
+		_isDead = false,
+		COLOR_DARK = 0, COLOR_LIGHT = 1;
 
 		for (var i = 0; i < this.walls.length; i++) {
 			this.walls[i] = new Wall({
@@ -61,14 +63,97 @@ module.exports = Hexagon = (function() {
 			this.walls[i].generatePattern(6);
 		};
 
+		this.loadConfig = function(url, callback) {
+			var _this = this;
+			var data = Utils.getJSON(url, function(data) {
+				if (typeof data === 'undefined') {
+					console.error("HexagonJS @ " + url + ": Can't get data.");
+					return;
+				}
+				if (typeof data.game === 'undefined') {
+					console.error("HexagonJS @ " + url + ": \"game\" object not found.");
+					return;
+				}
+				if (typeof data.game.angleSpeed !== 'undefined') {
+					if (typeof data.game.angleSpeed === 'number')
+						this.angleSpeed = data.game.angleSpeed;
+					else
+						console.error("HexagonJS @ " + url + ": \"angleSpeed\" must be a number.");
+				}
+				if (typeof data.game.wallSpeed !== 'undefined') {
+					if (typeof data.game.wallSpeed === 'number')
+						if (data.game.wallSpeed > 0)
+							this.wallSpeed = data.game.wallSpeed;
+						else
+							console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a not null positive number.");
+					else
+						console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a number.");
+				}
+				if (typeof data.game.cursorSpeed !== 'undefined') {
+					if (typeof data.game.cursorSpeed === 'number')
+						if (data.game.cursorSpeed > 0)
+							this.cursor.speed = data.game.cursorSpeed;
+						else
+							console.error("HexagonJS @ " + url + ": \"cursorSpeed\" must be a not null positive number.");
+					else
+						console.error("HexagonJS @ " + url + ": \"cursorSpeed\" must be a number.");
+				}
+				if (typeof data.game.backgroundColors !== 'undefined') {
+					if (typeof data.game.backgroundColors === 'object')
+						if (data.game.backgroundColors.length == 2) {
+							if (typeof data.game.backgroundColors[0] === 'string' &&
+								typeof data.game.backgroundColors[1] === 'string')
+								this.backgroundColors = data.game.backgroundColors;
+							else
+								console.error("HexagonJS @ " + url + ": \"backgroundColors\" must contain strings.");
+						}
+						else
+							console.error("HexagonJS @ " + url + ": \"backgroundColors\" must contain two values.");
+					else
+						console.error("HexagonJS @ " + url + ": \"backgroundColors\" must be an array of strings.");
+				}
+				if (typeof data.game.wallColors !== 'undefined') {
+					if (typeof data.game.wallColors === 'object')
+						if (data.game.wallColors.length == 2) {
+							if (typeof data.game.wallColors[0] === 'string' &&
+								typeof data.game.wallColors[1] === 'string')
+								this.wallColors = data.game.wallColors;
+							else
+								console.error("HexagonJS @ " + url + ": \"wallColors\" must contain strings.");
+						}
+						else
+							console.error("HexagonJS @ " + url + ": \"wallColors\" must contain two values.");
+					else
+						console.error("HexagonJS @ " + url + ": \"wallColors\" must be an array of strings.");
+				}
+
+				if (typeof data.game.levels !== 'undefined')
+					this.timer.load(data);
+
+				if (typeof callback === 'function')
+					callback();
+			}.bind(this));
+		};
+
+		if (typeof this.args.config === 'string')
+			this.loadConfig(this.args.config);
+
 		this.init = function() {
-			this.angleSpeed = typeof args.angleSpeed === 'number' ? args.angleSpeed : 2;
-			if (Math.floor(Date.now()) % 2 == 0)
-				this.angleSpeed *= -1;
-			this.wallSpeed = args.wallSpeed || 2;
+			if (typeof this.args.config === 'string')
+				this.loadConfig(this.args.config, function() {
+					if (Math.floor(Date.now()) % 2 == 0)
+						this.angleSpeed *= -1;
+				}.bind(this));
+			else {
+				this.angleSpeed = 1.2;
+				this.wallSpeed = 5;
+				if (Math.floor(Date.now()) % 2 == 0)
+					this.angleSpeed *= -1;
+			}
+
 			this.cursor.size = 7;
 			this.timer.currentLevel = 0;
-			this.timer.levelText.innerHTML = "POINT";
+			this.timer.levelText.innerHTML = this.timer.levelTexts[0];
 			_frameCount = 0;
 
 			return this;
@@ -150,7 +235,7 @@ module.exports = Hexagon = (function() {
 			this.hexagon.draw(this.backgroundColors[COLOR_DARK], this.currentWallColor, 7);
 			if (this.hexagon.size > 50)
 				this.hexagon.size -= 25;
-			this.timer.update(_frameCount);
+			this.timer.update(_frameCount, this.currentWallColor);
 
 			if (_isDead)
 				return this.die();

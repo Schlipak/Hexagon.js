@@ -1,11 +1,11 @@
 exports.config =
   files:
     javascripts:
-      joinTo: 'app.js'
+      joinTo: 'hexagon.js'
     stylesheets:
-      joinTo: 'app.css'
+      joinTo: 'hexagon.css'
     templates:
-      joinTo: 'app.js'
+      joinTo: 'hexagon.js'
   plugins:
     assetsmanager:
       copyTo:

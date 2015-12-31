@@ -6,8 +6,6 @@ module.exports = Cursor = (function() {
 	function Cursor(args) {
 		this.canvas = args.canvas || {};
 		this.color = args.color || "#fff";
-		this.strokeColor = args.strokeColor || "#000";
-		this.strokeWidth = args.strokeWidth || 0;
 		this.size = args.size || 5;
 		this.radius = args.radius || 50;
 		this.speed = args.speed || 4;
@@ -35,9 +33,6 @@ module.exports = Cursor = (function() {
 			ctx.closePath();
 
 			ctx.fillStyle = this.color;
-			ctx.strokeStyle = this.strokeColor;
-			ctx.lineWidth = this.strokeWidth;
-			ctx.stroke();
 			ctx.fill();
 
 			ctx.translate(c_x, c_y);
