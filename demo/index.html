@@ -25,12 +25,12 @@
 			height: 100%;
 		}
 	</style>
-	<link rel="stylesheet" type="text/css" href="app.css">
+	<link rel="stylesheet" type="text/css" href="hexagon.css">
 </head>
 <body>
 	<canvas id="hexagon"></canvas>
 
-	<script type="application/javascript" src="app.js"></script>
+	<script type="application/javascript" src="hexagon.js"></script>
 	<script type="application/javascript">
 		(function() {
 			var _canvas = document.getElementById('hexagon');
@@ -48,12 +48,17 @@
 
 			var Hexagon = require('Hexagon');
 			var _hex = new Hexagon({
-				canvas: _canvas,
-				angleSpeed: 1.2,
-				wallSpeed: 5/*,
-				wallColors: ["#ED7823", "#DC1467"],
-				backgroundColors: ["#FFFFFF", "#FFCCEE"]*/
+				canvas: _canvas
 			}).play();
+
+			/*
+				This would configure the game with the contents of the file config.JSON
+
+				var _hex = new Hexagon({
+					canvas: _canvas,
+					config: "config.JSON"
+				}).play();
+			*/
 		}());
 	</script>
 </body>
