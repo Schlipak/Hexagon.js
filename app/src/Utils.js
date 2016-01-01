@@ -40,6 +40,13 @@ var Utils = {
 			}
 		};
 		xhr.send();
+	},
+	arrayAvg: function arrayAvg(a) {
+		var sum = 0;
+		for (var i = a.length - 1; i >= 0; i--) {
+			sum += a[i];
+		};
+		return sum / a.length;
 	}
 };
 

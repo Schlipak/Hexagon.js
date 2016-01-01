@@ -23,7 +23,7 @@ module.exports = Wall = (function() {
 				this.generatePattern(amount);
 		};
 
-		this.draw = function(canvas, color) {
+		this.draw = function(canvas, color, offset) {
 			var ctx = canvas.getContext('2d');
 			var cx = canvas.width / 2,
 			cy = canvas.height / 2;
@@ -33,10 +33,10 @@ module.exports = Wall = (function() {
 					continue;
 
 				ctx.beginPath();
-				ctx.moveTo(cx + this.distance * Math.cos(i * 2 * Math.PI / 6), cy + this.distance * Math.sin(i * 2 * Math.PI / 6));
-				ctx.lineTo(cx + this.distance * Math.cos((i + 1) * 2 * Math.PI / 6), cy + this.distance * Math.sin((i + 1) * 2 * Math.PI / 6));
-				ctx.lineTo(cx + (this.distance - this.width) * Math.cos((i + 1) * 2 * Math.PI / 6), cy + (this.distance - this.width) * Math.sin((i + 1) * 2 * Math.PI / 6));
-				ctx.lineTo(cx + (this.distance - this.width) * Math.cos(i * 2 * Math.PI / 6), cy + (this.distance - this.width) * Math.sin(i * 2 * Math.PI / 6));
+				ctx.moveTo(cx + (this.distance + offset) * Math.cos(i * 2 * Math.PI / 6), cy + (this.distance + offset) * Math.sin(i * 2 * Math.PI / 6));
+				ctx.lineTo(cx + (this.distance + offset) * Math.cos((i + 1) * 2 * Math.PI / 6), cy + (this.distance + offset) * Math.sin((i + 1) * 2 * Math.PI / 6));
+				ctx.lineTo(cx + ((this.distance + offset) - this.width) * Math.cos((i + 1) * 2 * Math.PI / 6), cy + ((this.distance + offset) - this.width) * Math.sin((i + 1) * 2 * Math.PI / 6));
+				ctx.lineTo(cx + ((this.distance + offset) - this.width) * Math.cos(i * 2 * Math.PI / 6), cy + ((this.distance + offset) - this.width) * Math.sin(i * 2 * Math.PI / 6));
 				ctx.closePath();
 
 				ctx.fillStyle = color;

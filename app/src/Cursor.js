@@ -12,10 +12,10 @@ module.exports = Cursor = (function() {
 		this.dir = 0;
 		this.angle = 30;
 
-		this.draw = function() {
+		this.draw = function(offset) {
 			var ctx = this.canvas.getContext('2d'),
-			c_x = (this.canvas.width / 2) + (this.radius * Math.cos(this.angle * Math.PI / 180)),
-			c_y = (this.canvas.height / 2) + (this.radius * Math.sin(this.angle * Math.PI / 180));
+			c_x = (this.canvas.width / 2) + ((this.radius + offset) * Math.cos(this.angle * Math.PI / 180)),
+			c_y = (this.canvas.height / 2) + ((this.radius + offset) * Math.sin(this.angle * Math.PI / 180));
 
 			this.angle = this.angle + (this.dir * this.speed);
 			if (this.angle < 0)

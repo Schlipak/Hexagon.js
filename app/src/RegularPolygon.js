@@ -15,15 +15,15 @@ module.exports = RegularPolygon = (function() {
 		this.size = args.size		|| 10,
 		this.canvas = args.canvas	|| {};
 
-		this.draw = function(fillColor, strokeColor, strokeWidth) {
+		this.draw = function(fillColor, strokeColor, strokeWidth, offset) {
 			var ctx	= this.canvas.getContext('2d'),
 			cx 	= this.canvas.width / 2 || 0,
 			cy 	= this.canvas.height / 2 || 0;
 
 			ctx.beginPath();
-			ctx.moveTo(cx + this.size * Math.cos(0), cy + this.size *  Math.sin(0));
+			ctx.moveTo(cx + (this.size + offset) * Math.cos(0), cy + this.size *  Math.sin(0));
 			for (var i = 1; i <= this.sides; i++) {
-				ctx.lineTo(cx + this.size * Math.cos(i * 2 * Math.PI / this.sides), cy + this.size * Math.sin(i * 2 * Math.PI / this.sides));
+				ctx.lineTo(cx + (this.size + offset) * Math.cos(i * 2 * Math.PI / this.sides), cy + (this.size + offset) * Math.sin(i * 2 * Math.PI / this.sides));
 			};
 
 			ctx.fillStyle = fillColor;

@@ -10,4 +10,5 @@ exports.config =
     assetsmanager:
       copyTo:
         fonts: ['app/fonts/*']
+        audio: ['app/audio/*']
       minTimeSpanSeconds: 120

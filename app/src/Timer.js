@@ -17,6 +17,10 @@ module.exports = Timer = (function() {
 		this.levelProgressContainer;
 		this.levelProgress;
 
+		this.notify = null;
+		if (typeof args !== 'undefined' && typeof args.url !== 'undefined')
+			this.notify = new Audio(args.url);
+
 		this.load = function(data) {
 			if (typeof data === 'undefined') {
 				console.error("HexagonJS @ " + url + ": Can't get data.");
@@ -90,6 +94,8 @@ module.exports = Timer = (function() {
 
 			for (var i = 0; i < this.levelTimings.length; i++) {
 				if (seconds == this.levelTimings[i] && this.currentLevel == i) {
+					if (this.notify != null)
+						this.notify.play();
 					this.currentLevel++;
 					this.levelText.innerHTML = this.levelTexts[this.currentLevel];
 				}
