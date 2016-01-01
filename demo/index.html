@@ -48,17 +48,9 @@
 
 			var Hexagon = require('Hexagon');
 			var _hex = new Hexagon({
-				canvas: _canvas
+				canvas: _canvas,
+				config: "config.JSON"
 			}).play();
-
-			/*
-				This would configure the game with the contents of the file config.JSON
-
-				var _hex = new Hexagon({
-					canvas: _canvas,
-					config: "config.JSON"
-				}).play();
-			*/
 		}());
 	</script>
 </body>
