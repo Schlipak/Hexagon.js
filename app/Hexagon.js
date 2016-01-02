@@ -75,7 +75,7 @@ module.exports = Hexagon = (function() {
 			this.walls[i] = new Wall({
 				distance: this.minDist + ((this.minDist / 3) * (i + 1))
 			});
-			this.walls[i].generatePattern(6);
+			this.walls[i].generatePattern();
 		};
 
 		this.loadConfig = function(url, callback) {
@@ -160,6 +160,18 @@ module.exports = Hexagon = (function() {
 							console.error("HexagonJS @ " + url + ": \"wallColors\" must contain two values.");
 					else
 						console.error("HexagonJS @ " + url + ": \"wallColors\" must be an array of strings.");
+				}
+				if (typeof data.game.patterns === 'object') {
+					for (var i = 0; i < data.game.patterns.length; i++) {
+						if (typeof data.game.patterns[i] != 'object' ||
+							data.game.patterns[i].length != 6) {
+							console.error("HexagonJS @ " + url + ": \"patterns\" must be an array of arrays of 6 booleans.");
+						}
+					}
+					for (var i = this.walls.length - 1; i >= 0; i--) {
+						this.walls[i].setPatterns(data.game.patterns);
+						this.walls[i].generatePattern();
+					};
 				}
 
 				if (typeof data.levels !== 'undefined')
@@ -288,7 +300,7 @@ module.exports = Hexagon = (function() {
 				this.walls[i].distance -= this.wallSpeed;
 				if (this.walls[i].distance <= 0) {
 					this.walls[i].distance = this.minDist + (this.minDist / 3);
-					this.walls[i].generatePattern(6);
+					this.walls[i].generatePattern();
 				}
 				if (this.walls[i].checkCollision(this.cursor.getCoord(), this.canvas))
 					_isDead = true;
@@ -342,7 +354,7 @@ module.exports = Hexagon = (function() {
 							_this.walls[i] = new Wall({
 								distance: _this.minDist + ((_this.minDist / 3) * (i + 1))
 							});
-							_this.walls[i].generatePattern(6);
+							_this.walls[i].generatePattern();
 						};
 						window.onkeydown = null;
 						cancelAnimationFrame(_animation_id_);
@@ -363,7 +375,7 @@ module.exports = Hexagon = (function() {
 				this.walls[i].distance -= this.wallSpeed;
 				if (this.walls[i].distance <= 0) {
 					this.walls[i].distance = this.minDist + (this.minDist / 3);
-					this.walls[i].generatePattern(6);
+					this.walls[i].generatePattern();
 				}
 			}
 			this.cursor.color = _frameCount % 6 < 3 ? this.wallColors[0] : this.wallColors[1];

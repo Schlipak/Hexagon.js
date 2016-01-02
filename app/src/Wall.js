@@ -8,6 +8,10 @@ module.exports = Wall = (function() {
 		this.distance = args.distance || 250;
 		this.width = args.width || 50;
 
+		var _patterns_ = [];
+		if (typeof args !== 'undefined' && typeof args.patterns === 'object')
+			_patterns_ = args.patterns;
+
 		var _checkValid = function(walls) {
 			for (var i = 0; i < walls.length; i++) {
 				if (walls[i] == false)
@@ -16,11 +20,20 @@ module.exports = Wall = (function() {
 			return false;
 		};
 
-		this.generatePattern = function(amount) {
-			for (var i = 0; i < amount; i++)
+		this.setPatterns = function(patterns) {
+			_patterns_ = patterns;
+		};
+
+		this.generatePattern = function() {
+			if (_patterns_.length > 0) {
+				this.walls = _patterns_[Math.floor(Math.random() * _patterns_.length)];
+				return;
+			};
+
+			for (var i = 0; i < this.walls.length; i++)
 				this.walls[i] = Boolean(Math.round(Math.random()));
 			if (!_checkValid(this.walls))
-				this.generatePattern(amount);
+				this.generatePattern();
 		};
 
 		this.draw = function(canvas, color, offset) {
