@@ -6,15 +6,16 @@ var Rays 			= require('src/Rays');
 var Wall 			= require('src/Wall');
 var Cursor 			= require('src/Cursor');
 var Timer 			= require('src/Timer');
+var Kiloton			= require('src/Kiloton');
 
 var Hexagon;
 
 module.exports = Hexagon = (function() {
 	function Hexagon(args) {
 		if (typeof args === 'undefined')
-			throw new Error("No args provided");
+		throw new Error("No args provided");
 		if (typeof args.canvas === 'undefined')
-			throw new Error("No canvas provided");
+		throw new Error("No canvas provided");
 
 		/* JS args */
 		this.args = args;
@@ -23,10 +24,12 @@ module.exports = Hexagon = (function() {
 
 		/* JSON config */
 		this.angleSpeed = 1.2;
-		this.backgroundColors = [["#0A2727", "#103D3D"], ["#092415", "#0D2F1C"]];
-		this.wallColors = ["#1EAAA5", "#4EFC96"];
+		this.backgroundColors = [["#000000", "#000000"], ["#000000", "#000000"]];
+		this.wallColors = ["#FFFFFF", "#FFFFFF"];
 		this.wallSpeed = 5;
-		
+		this.rotationChance = 5;
+		this.rotationFrequency = 5;
+
 		/* Other members */
 		this.walls = [null, null, null, null];
 		this.currentWallColor = this.wallColors[0];
@@ -62,7 +65,7 @@ module.exports = Hexagon = (function() {
 		var _analyser_  = _audio_ctx_.createAnalyser();
 		var _audio_src_ = null;
 		var _audio_data_ = [];
-		var _offset_ = 0;		
+		var _offset_ = 0;
 		var _chunk_size_ = 0;
 
 		/* Other vars */
@@ -78,124 +81,37 @@ module.exports = Hexagon = (function() {
 			this.walls[i].generatePattern();
 		};
 
-		this.loadConfig = function(url, callback) {
-			var _this = this;
-			var data = Utils.getJSON(url, function(data) {
-				if (typeof data === 'undefined') {
-					console.error("HexagonJS @ " + url + ": Can't get data.");
-					return;
-				}
-				if (typeof data.game === 'undefined') {
-					console.error("HexagonJS @ " + url + ": \"game\" object not found.");
-					return;
-				}
-				if (!this.audio_bgm && typeof data.game.music !== 'undefined') {
-					if (typeof data.game.music === 'string') {
-						this.audio_bgm = new Audio(data.game.music);
-						this.audio_bgm.volume = 0.6;
-						_audio_src_ = _audio_ctx_.createMediaElementSource(this.audio_bgm);
-						_audio_src_.connect(_analyser_);
-						_audio_src_.connect(_audio_ctx_.destination);
-						_audio_data_ = new Uint8Array(_analyser_.frequencyBinCount);		
-						_chunk_size_ = ~~(_audio_data_.length / 3);
-					} else
-						console.error("HexagonJS @ " + url + ": \"music\" must be a string.");
-				}
-				if (typeof data.game.angleSpeed !== 'undefined') {
-					if (typeof data.game.angleSpeed === 'number')
-						this.angleSpeed = data.game.angleSpeed;
-					else
-						console.error("HexagonJS @ " + url + ": \"angleSpeed\" must be a number.");
-				}
-				if (typeof data.game.wallSpeed !== 'undefined') {
-					if (typeof data.game.wallSpeed === 'number')
-						if (data.game.wallSpeed > 0)
-							this.wallSpeed = data.game.wallSpeed;
-						else
-							console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a not null positive number.");
-					else
-						console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a number.");
-				}
-				if (typeof data.game.cursorSpeed !== 'undefined') {
-					if (typeof data.game.cursorSpeed === 'number')
-						if (data.game.cursorSpeed > 0)
-							this.cursor.speed = data.game.cursorSpeed;
-						else
-							console.error("HexagonJS @ " + url + ": \"cursorSpeed\" must be a not null positive number.");
-					else
-						console.error("HexagonJS @ " + url + ": \"cursorSpeed\" must be a number.");
-				}
-				if (typeof data.game.backgroundColors !== 'undefined') {
-					if (typeof data.game.backgroundColors === 'object')
-						if (data.game.backgroundColors.length == 2) {
-							if (typeof data.game.backgroundColors[0] === 'object' &&
-								typeof data.game.backgroundColors[1] === 'object')
-								if (data.game.backgroundColors[0].length != 2 ||
-									data.game.backgroundColors[1].length != 2 ||
-									typeof data.game.backgroundColors[0][0] !== 'string' ||
-									typeof data.game.backgroundColors[0][1] !== 'string' ||
-									typeof data.game.backgroundColors[1][0] !== 'string' ||
-									typeof data.game.backgroundColors[1][1] !== 'string')
-									console.error("HexagonJS @ " + url + ": \"backgroundColors\" must contain two arrays containing two strings.");
-								else
-									this.backgroundColors = data.game.backgroundColors;
-							else
-								console.error("HexagonJS @ " + url + ": \"backgroundColors\" must contain arrays of strings.");
-						}
-						else
-							console.error("HexagonJS @ " + url + ": \"backgroundColors\" must contain two values.");
-					else
-						console.error("HexagonJS @ " + url + ": \"backgroundColors\" must be an array of arrays of strings.");
-				}
-				if (typeof data.game.wallColors !== 'undefined') {
-					if (typeof data.game.wallColors === 'object')
-						if (data.game.wallColors.length == 2) {
-							if (typeof data.game.wallColors[0] === 'string' &&
-								typeof data.game.wallColors[1] === 'string')
-								this.wallColors = data.game.wallColors;
-							else
-								console.error("HexagonJS @ " + url + ": \"wallColors\" must contain strings.");
-						}
-						else
-							console.error("HexagonJS @ " + url + ": \"wallColors\" must contain two values.");
-					else
-						console.error("HexagonJS @ " + url + ": \"wallColors\" must be an array of strings.");
-				}
-				if (typeof data.game.patterns === 'object') {
-					for (var i = 0; i < data.game.patterns.length; i++) {
-						if (typeof data.game.patterns[i] != 'object' ||
-							data.game.patterns[i].length != 6) {
-							console.error("HexagonJS @ " + url + ": \"patterns\" must be an array of arrays of 6 booleans.");
-						}
-					}
-					for (var i = this.walls.length - 1; i >= 0; i--) {
-						this.walls[i].setPatterns(data.game.patterns);
-						this.walls[i].generatePattern();
-					};
-				}
+		this.getAudioCtx = function() {return _audio_ctx_;}
+		this.setAudioCtx = function(ctx) {_audio_ctx_ = ctx;}
+		this.getAnalyser = function() {return _analyser_;}
+		this.setAnalyser = function(a) {_analyser_ = a;}
+		this.getAudioSrc = function() {return _audio_src_;}
+		this.setAudioSrc = function(src) {_audio_src_ = src;}
+		this.getAudioData = function() {return _audio_data_;}
+		this.setAudioData = function(data) {_audio_data_ = data;}
+		this.getChunkSize = function() {return _chunk_size_;}
+		this.setChunkSize = function(size) {_chunk_size_ = size;}
 
-				if (typeof data.levels !== 'undefined')
-					this.timer.load(data);
-
-				if (typeof callback === 'function')
-					callback();
+		if (typeof this.args.config === 'string') {
+			Kiloton.loadConfig(this.args.config, this, function() {
+				if (this.audio_bgm)
+				this.audio_bgm.play();
 			}.bind(this));
-		};
-
-		if (typeof this.args.config === 'string')
-			this.loadConfig(this.args.config);
+		}
 
 		this.init = function() {
 			if (typeof this.args.config === 'string')
-				this.loadConfig(this.args.config, function() {
-					if (Math.floor(Date.now()) % 2 == 0)
-						this.angleSpeed *= -1;
-				}.bind(this));
+			Kiloton.loadConfig(this.args.config, this, function() {
+				if (Math.floor(Date.now()) % 2 == 0)
+				this.angleSpeed *= -1;
+				if (this.audio_bgm)
+				this.audio_bgm.play();
+			}.bind(this));
 			else {
 				this.angleSpeed = 1.2;
 				this.wallSpeed = 5;
 				if (Math.floor(Date.now()) % 2 == 0)
-					this.angleSpeed *= -1;
+				this.angleSpeed *= -1;
 			}
 
 			this.cursor.size = 7;
@@ -212,7 +128,7 @@ module.exports = Hexagon = (function() {
 			document.onkeydown = function(event) {
 				var key = event.which || event.keyCode;
 				if (key == 27)
-					_isDead = true;
+				_isDead = true;
 				_this.moveCursor(event);
 			};
 			document.onkeyup = function(event) {
@@ -221,7 +137,7 @@ module.exports = Hexagon = (function() {
 			this.audio_start.play();
 			setTimeout(function() {
 				if (this.audio_bgm && this.audio_bgm.paused)
-					this.audio_bgm.play();
+				this.audio_bgm.play();
 			}.bind(this), 200);
 			_animation_id_ = requestAnimationFrame(_update.bind(this))
 		};
@@ -229,22 +145,22 @@ module.exports = Hexagon = (function() {
 		this.moveCursor = function(event) {
 			var key = event.which || event.keyCode;
 			if (key == 39)
-				this.cursor.dir = 1;
+			this.cursor.dir = 1;
 			else if (key == 37)
-				this.cursor.dir = -1;
+			this.cursor.dir = -1;
 		}
 
 		this.stopCursor = function(event) {
 			var key = event.which || event.keyCode;
 			if ((key == 39 && this.cursor.dir == 1) || (key == 37 && this.cursor.dir == -1))
-				this.cursor.dir = 0;
+			this.cursor.dir = 0;
 		}
 
 		this.die = function() {
 			setTimeout(function() {
 				if (this.audio_bgm) {
 					this.audio_bgm.pause();
-					this.audio_bgm.currentTime = 0;
+					this.audio_bgm = null;
 				}
 			}.bind(this), 200);
 			this.audio_die.play();
@@ -258,30 +174,77 @@ module.exports = Hexagon = (function() {
 		};
 
 		var _update = function() {
-			var _fc_acc = (_frameCount % 120) <= 60 ? (_frameCount % 120) : 60 - ((_frameCount % 120) - 60);
-			this.currentWallColor = Utils.interpolateColor(
-				this.wallColors[0],
-				this.wallColors[1],
-				60,
-				_fc_acc
-			);
-			this.currentBGC = [
-				Utils.interpolateColor(
-					this.backgroundColors[0][COLOR_DARK],
-					this.backgroundColors[1][COLOR_DARK],
-					60,
-					_fc_acc
-				),
-				Utils.interpolateColor(
-					this.backgroundColors[0][COLOR_LIGHT],
-					this.backgroundColors[1][COLOR_LIGHT],
-					60,
-					_fc_acc
-				)
-			];
+			var _ending = this.timer.levelTimings[this.timer.levelTimings.length - 1];
+			if (_frameCount >= (_ending * 60) && _frameCount <= ((_ending + .3) * 60)) {
+				if (_frameCount == (_ending * 60) && typeof this.args.ending === 'string') {
+					this.audio_bgm.pause();
+					this.audio_bgm = null;
+					Kiloton.loadConfig(this.args.ending, this, function() {
+						this.audio_bgm.play();
+					}.bind(this));
+					for (var i = 0; i < this.walls.length; i++) {
+						this.walls[i] = new Wall({
+							distance: this.minDist + ((this.minDist / 3) * (i + 8))
+						});
+						this.walls[i].generatePattern();
+					};
+					this.audio_start.play();
+				}
+				this.ctx.fillStyle = "#FFFFFF";
+				this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+				this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+				_frameCount++;
+				_animation_id_ = requestAnimationFrame(_update.bind(this));
+				return;
+			}
 
-			if ((_frameCount % (5* 60) == 0) && (Math.floor(Math.random() * 100)) < 5)
-				this.angleSpeed *= -1;
+			var _fc_acc = (_frameCount % 120) <= 60 ? (_frameCount % 120) : 60 - ((_frameCount % 120) - 60);
+			if (_frameCount < 120) {
+				this.currentWallColor = Utils.interpolateColor(
+					this.currentWallColor,
+					this.wallColors[0],
+					120,
+					_frameCount
+				);
+				this.currentBGC = [
+					Utils.interpolateColor(
+						this.currentBGC[COLOR_DARK],
+						this.backgroundColors[0][COLOR_DARK],
+						120,
+						_frameCount
+					),
+					Utils.interpolateColor(
+						this.currentBGC[COLOR_LIGHT],
+						this.backgroundColors[0][COLOR_LIGHT],
+						120,
+						_frameCount
+					)
+				];
+			} else {
+				this.currentWallColor = Utils.interpolateColor(
+					this.wallColors[0],
+					this.wallColors[1],
+					60,
+					_fc_acc
+				);
+				this.currentBGC = [
+					Utils.interpolateColor(
+						this.backgroundColors[0][COLOR_DARK],
+						this.backgroundColors[1][COLOR_DARK],
+						60,
+						_fc_acc
+					),
+					Utils.interpolateColor(
+						this.backgroundColors[0][COLOR_LIGHT],
+						this.backgroundColors[1][COLOR_LIGHT],
+						60,
+						_fc_acc
+					)
+				];
+			}
+
+			if ((_frameCount % (this.rotationFrequency * 60) == 0) && (Math.floor(Math.random() * 100)) < this.rotationChance)
+			this.angleSpeed *= -1;
 
 			if (this.audio_bgm) {
 				_analyser_.getByteFrequencyData(_audio_data_);
@@ -303,21 +266,21 @@ module.exports = Hexagon = (function() {
 					this.walls[i].generatePattern();
 				}
 				if (this.walls[i].checkCollision(this.cursor.getCoord(), this.canvas))
-					_isDead = true;
+				_isDead = true;
 			}
 			this.cursor.color = this.currentWallColor;
 			this.cursor.draw(_offset_);
 			if (this.cursor.radius > 75)
-				this.cursor.radius -= 25;
+			this.cursor.radius -= 25;
 			if (this.cursor.size > 7)
-				this.cursor.size -= 1;
+			this.cursor.size -= 1;
 			this.hexagon.draw(this.currentBGC[COLOR_DARK], this.currentWallColor, 7, _offset_);
 			if (this.hexagon.size > 50)
-				this.hexagon.size -= 25;
+			this.hexagon.size -= 25;
 			this.timer.update(_frameCount, this.currentWallColor);
 
 			if (_isDead)
-				return this.die();
+			return this.die();
 
 			_frameCount++;
 			_animation_id_ = requestAnimationFrame(_update.bind(this));
@@ -327,18 +290,18 @@ module.exports = Hexagon = (function() {
 			if (this.angleSpeed > .4) {
 				this.angleSpeed -= .01;
 				if (this.angleSpeed < .4)
-					this.angleSpeed = .4;
+				this.angleSpeed = .4;
 			}
 			else if (this.angleSpeed < -.4) {
 				this.angleSpeed += .01;
 				if (this.angleSpeed > -.4)
-					this.angleSpeed = -.4;
+				this.angleSpeed = -.4;
 			}
 			if (this.wallSpeed > 0)
-				this.wallSpeed = 0;
+			this.wallSpeed = 0;
 
 			if (_frameCount == (.5 * 60))
-				this.wallSpeed = -50;
+			this.wallSpeed = -50;
 			if (_frameCount >= (.8 * 60) && this.hexagon.size < 250) {
 				this.hexagon.size += 50;
 				this.cursor.radius += 50;
@@ -385,11 +348,11 @@ module.exports = Hexagon = (function() {
 				if (_offset_ < 0) {
 					_offset_ += 1;
 					if (_offset_ > 0)
-						_offset_ = 0;
+					_offset_ = 0;
 				} else if (_offset_ > 0) {
 					_offset_ -= 1;
 					if (_offset_ < 0)
-						_offset_ = 0;
+					_offset_ = 0;
 				}
 			}
 

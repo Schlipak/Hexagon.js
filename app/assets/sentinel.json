@@ -1,11 +1,13 @@
 {
 	"game": {
-		"angleSpeed": 1.3,
-		"backgroundColors": [["#000000", "#082410"], ["#000000", "#221602"]],
-		"cursorSpeed": 6,
-		"wallColors": ["#33E566", "#DC9311"],
-		"wallSpeed": 5,
-		"music": "audio/bgm.ogg",
+		"angleSpeed": 2.3,
+		"backgroundColors": [["#330A04", "#380A04"], ["#6C1305", "#741405"]],
+		"cursorSpeed": 8,
+		"wallColors": ["#B32900", "#EFAC41"],
+		"wallSpeed": 8.5,
+		"rotationChance": 80,
+		"rotationFrequency": 3,
+		"music": "audio/sentinel.ogg",
 		"patterns": [
 			[false, true, true, true, true, true],
 			[true, true, false, true, true, true],

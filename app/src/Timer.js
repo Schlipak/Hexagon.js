@@ -8,6 +8,7 @@ module.exports = Timer = (function() {
 	function Timer(args) {
 		this.currentLevel = 0;
 		this.levelTimings = [10, 20, 30, 45, 60];
+		this.ending = this.levelTimings[this.levelTimings.length - 1];
 		this.levelTexts = ["POINT", "LINE", "TRIANGLE", "SQUARE", "PENTAGON", "HEXAGON"];
 		this.element;
 		this.timeText;
@@ -39,7 +40,9 @@ module.exports = Timer = (function() {
 				console.error("HexagonJS @ " + url + ": Level timings represent the end of each level. There should be one less timings than level names since the last level lasts forever.");
 				return;
 			}
+
 			this.levelTimings = data.levels.timings;
+			this.ending = this.levelTimings[this.levelTimings.length - 1];
 			this.levelTexts = data.levels.texts;
 			this.levelText.innerHTML = this.levelTexts[0];
 		};
@@ -94,7 +97,7 @@ module.exports = Timer = (function() {
 
 			for (var i = 0; i < this.levelTimings.length; i++) {
 				if (seconds == this.levelTimings[i] && this.currentLevel == i) {
-					if (this.notify != null)
+					if (i < this.levelTimings.length - 1 && this.notify != null)
 						this.notify.play();
 					this.currentLevel++;
 					this.levelText.innerHTML = this.levelTexts[this.currentLevel];
