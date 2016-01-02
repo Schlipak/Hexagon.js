@@ -5,7 +5,15 @@
 		"cursorSpeed": 5,
 		"wallColors": ["#33E566", "#DC9311"],
 		"wallSpeed": 5,
-		"music": "audio/bgm.ogg"
+		"music": "audio/bgm.ogg",
+		"patterns": [
+			[false, true, true, true, true, true],
+			[true, false, true, true, true, true],
+			[true, true, false, true, true, true],
+			[true, true, true, false, true, true],
+			[true, true, true, true, false, true],
+			[true, true, true, true, true, false]
+		]
 	},
 	"levels": {
 		"timings": [10, 20, 30, 45, 60],
