@@ -2,17 +2,18 @@
 	"game": {
 		"angleSpeed": 1.3,
 		"backgroundColors": [["#000000", "#082410"], ["#000000", "#221602"]],
-		"cursorSpeed": 5,
+		"cursorSpeed": 6,
 		"wallColors": ["#33E566", "#DC9311"],
 		"wallSpeed": 5,
 		"music": "audio/bgm.ogg",
 		"patterns": [
 			[false, true, true, true, true, true],
-			[true, false, true, true, true, true],
 			[true, true, false, true, true, true],
 			[true, true, true, false, true, true],
-			[true, true, true, true, false, true],
-			[true, true, true, true, true, false]
+			[true, true, true, true, true, false],
+			[true, false, true, false, true, false],
+			[false, true, false, true, false, true],
+			[true, false, false, true, false, false]
 		]
 	},
 	"levels": {
