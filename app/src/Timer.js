@@ -17,6 +17,8 @@ module.exports = Timer = (function() {
 		this.levelText;
 		this.levelProgressContainer;
 		this.levelProgress;
+		this._hexagon = args.self || null;
+		this.eventList = [];
 
 		this.notify = null;
 		if (typeof args !== 'undefined' && typeof args.url !== 'undefined')
@@ -80,11 +82,18 @@ module.exports = Timer = (function() {
 			return this;
 		};
 
-		this.update = function(_frameCount, color) {
-			var seconds = Math.floor(_frameCount / 60);
-			var dec = Math.floor(_frameCount - (seconds * 60));
+		this.update = function(_frameCount, color, _timeOffset) {
+			if (typeof _timeOffset === 'undefined')
+				_timeOffset = 0;
+			var seconds = Math.floor((_frameCount + _timeOffset) / 60);
+			var dec = Math.floor((_frameCount + _timeOffset) - (seconds * 60));
 			dec = ('0' + dec).slice(-2);
 			this.timeText.innerHTML = seconds + ':' + dec;
+
+			for (var i = 0; i < this.eventList.length; i++) {
+				if (this.eventList[i].time === _frameCount / 60)
+					this.eventList[i].callback(this._hexagon);
+			}
 
 			var percent = (_frameCount / (this.levelTimings[this.currentLevel] * 60)) * 100;
 			if (this.currentLevel > 0 && this.currentLevel < this.levelTexts.length - 1)
@@ -103,6 +112,22 @@ module.exports = Timer = (function() {
 					this.levelText.innerHTML = this.levelTexts[this.currentLevel];
 				}
 			};
+		};
+
+		this.registerEvent = function(timing, callback) {
+			for (var i = 0; i < this.eventList.length; i++) {
+				if (this.eventList[i].time == timing) {
+					this.eventList[i] = {
+						time: timing,
+						callback: callback
+					};
+					return;
+				}
+			}
+			this.eventList.push({
+				time: timing,
+				callback: callback
+			});
 		};
 	};
 

@@ -1,12 +1,12 @@
 "use strict";
 
-var Utils 			= require('src/Utils');
-var RegularPolygon 	= require('src/RegularPolygon');
-var Rays 			= require('src/Rays');
-var Wall 			= require('src/Wall');
-var Cursor 			= require('src/Cursor');
-var Timer 			= require('src/Timer');
-var Kiloton			= require('src/Kiloton');
+var Utils 			     = require('src/Utils');
+var RegularPolygon 	 = require('src/RegularPolygon');
+var Rays 			       = require('src/Rays');
+var Wall 			       = require('src/Wall');
+var Cursor 			     = require('src/Cursor');
+var Timer 			     = require('src/Timer');
+var Kiloton			     = require('src/Kiloton');
 
 var Hexagon;
 
@@ -25,7 +25,9 @@ module.exports = Hexagon = (function() {
 		/* JSON config */
 		this.angleSpeed = 1.2;
 		this.backgroundColors = [["#000000", "#000000"], ["#000000", "#000000"]];
+		var _backgroundColors = this.backgroundColors;
 		this.wallColors = ["#FFFFFF", "#FFFFFF"];
+		var _wallColors = this.wallColors;
 		this.wallSpeed = 5;
 		this.rotationChance = 5;
 		this.rotationFrequency = 5;
@@ -54,13 +56,14 @@ module.exports = Hexagon = (function() {
 			Math.pow(this.canvas.height, 2)
 		) / 2;
 		this.timer = new Timer({
-			url: 'audio/rankup.wav'
+			self: this,
+			url: 'audio/rankup.ogg'
 		}).init(this.wallColors);
 
 		/* Audio */
 		this.audio_bgm = null;
-		this.audio_start = new Audio('audio/start.wav');
-		this.audio_die = new Audio('audio/die.wav');
+		this.audio_start = new Audio('audio/start.ogg');
+		this.audio_die = new Audio('audio/die.ogg');
 		var _audio_ctx_ = new (window.AudioContext || window.webkitAudioContext);
 		var _analyser_  = _audio_ctx_.createAnalyser();
 		var _audio_src_ = null;
@@ -71,8 +74,10 @@ module.exports = Hexagon = (function() {
 		/* Other vars */
 		var _animation_id_,
 		_frameCount = 0,
+		_frameCount_levelUp = 0,
 		_isDead = false,
 		COLOR_DARK = 0, COLOR_LIGHT = 1;
+		var _start = 0;
 
 		for (var i = 0; i < this.walls.length; i++) {
 			this.walls[i] = new Wall({
@@ -95,30 +100,28 @@ module.exports = Hexagon = (function() {
 		if (typeof this.args.config === 'string') {
 			Kiloton.loadConfig(this.args.config, this, function() {
 				if (this.audio_bgm)
-				this.audio_bgm.play();
+					this.audio_bgm.play();
 			}.bind(this));
 		}
 
-		this.init = function() {
-			if (typeof this.args.config === 'string')
-			Kiloton.loadConfig(this.args.config, this, function() {
-				if (Math.floor(Date.now()) % 2 == 0)
-				this.angleSpeed *= -1;
-				if (this.audio_bgm)
-				this.audio_bgm.play();
-			}.bind(this));
-			else {
+		this.init = function(callback) {
+			if (typeof this.args.config === 'string') {
+				Kiloton.loadConfig(this.args.config, this, function() {
+					if (Math.floor(Date.now()) % 2 == 0)
+						this.angleSpeed *= -1;
+					this.play();
+				}.bind(this));
+			}	else {
 				this.angleSpeed = 1.2;
 				this.wallSpeed = 5;
 				if (Math.floor(Date.now()) % 2 == 0)
-				this.angleSpeed *= -1;
+					this.angleSpeed *= -1;
+				this.play();
 			}
-
 			this.cursor.size = 7;
 			this.timer.currentLevel = 0;
 			this.timer.levelText.innerHTML = this.timer.levelTexts[0];
 			_frameCount = 0;
-
 			return this;
 		};
 
@@ -137,8 +140,9 @@ module.exports = Hexagon = (function() {
 			this.audio_start.play();
 			setTimeout(function() {
 				if (this.audio_bgm && this.audio_bgm.paused)
-				this.audio_bgm.play();
+					this.audio_bgm.play();
 			}.bind(this), 200);
+			this.canvas.classList.add('playing');
 			_animation_id_ = requestAnimationFrame(_update.bind(this))
 		};
 
@@ -170,56 +174,52 @@ module.exports = Hexagon = (function() {
 			document.onkeydown = null;
 			document.onkeyup = null;
 			_frameCount = 0;
+			this.canvas.classList.remove('playing');
 			_animation_id_ = requestAnimationFrame(_dead.bind(this));
 		};
 
-		var _update = function() {
-			var _ending = this.timer.levelTimings[this.timer.levelTimings.length - 1];
-			if (_frameCount >= (_ending * 60) && _frameCount <= ((_ending + .3) * 60)) {
-				if (_frameCount == (_ending * 60) && typeof this.args.ending === 'string') {
-					this.audio_bgm.pause();
-					this.audio_bgm = null;
-					Kiloton.loadConfig(this.args.ending, this, function() {
-						this.audio_bgm.play();
-					}.bind(this));
-					for (var i = 0; i < this.walls.length; i++) {
-						this.walls[i] = new Wall({
-							distance: this.minDist + ((this.minDist / 3) * (i + 8))
-						});
-						this.walls[i].generatePattern();
-					};
-					this.audio_start.play();
-				}
-				this.ctx.fillStyle = "#FFFFFF";
-				this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-				this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-				_frameCount++;
-				_animation_id_ = requestAnimationFrame(_update.bind(this));
-				return;
-			}
+		this.getInterCoef = function(frame) {
+			return (frame % 120) <= 60 ? (frame % 120) : 60 - ((frame % 120) - 60);
+		};
 
-			var _fc_acc = (_frameCount % 120) <= 60 ? (_frameCount % 120) : 60 - ((_frameCount % 120) - 60);
-			if (_frameCount < 120) {
-				this.currentWallColor = Utils.interpolateColor(
-					this.currentWallColor,
-					this.wallColors[0],
+		this.fadeInterpolate = function() {
+			this.currentWallColor = Utils.interpolateColor(
+				this.currentWallColor,
+				this.wallColors[0],
+				120,
+				_frameCount - _start
+			);
+			this.currentBGC = [
+				Utils.interpolateColor(
+					this.currentBGC[COLOR_DARK],
+					this.backgroundColors[0][COLOR_DARK],
 					120,
-					_frameCount
-				);
-				this.currentBGC = [
-					Utils.interpolateColor(
-						this.currentBGC[COLOR_DARK],
-						this.backgroundColors[0][COLOR_DARK],
-						120,
-						_frameCount
-					),
-					Utils.interpolateColor(
-						this.currentBGC[COLOR_LIGHT],
-						this.backgroundColors[0][COLOR_LIGHT],
-						120,
-						_frameCount
-					)
-				];
+					_frameCount - _start
+				),
+				Utils.interpolateColor(
+					this.currentBGC[COLOR_LIGHT],
+					this.backgroundColors[0][COLOR_LIGHT],
+					120,
+					_frameCount - _start
+				)
+			];
+			if (_frameCount - _start == 120) {
+				_backgroundColors = this.backgroundColors;
+				_wallColors = this.wallColors;
+			}
+		};
+
+		this.colorsHasChanged = function() {
+			if (this.backgroundColors != _backgroundColors || this.wallColors != _wallColors)
+				return true;
+			return false;
+		};
+
+		this.interpolate = function() {
+			var _fc_acc = this.getInterCoef(_frameCount);
+			if (this.colorsHasChanged()) {
+				_start = _start < _frameCount - 120 ? _frameCount : _start;
+				this.fadeInterpolate();
 			} else {
 				this.currentWallColor = Utils.interpolateColor(
 					this.wallColors[0],
@@ -242,6 +242,36 @@ module.exports = Hexagon = (function() {
 					)
 				];
 			}
+		};
+
+		var _update = function() {
+			var _ending = this.timer.levelTimings[this.timer.levelTimings.length - 1];
+			if (_frameCount >= (_ending * 60) && _frameCount <= ((_ending + .3) * 60)) {
+				if (_frameCount == (_ending * 60) && typeof this.args.ending === 'string') {
+					this.audio_bgm.pause();
+					this.audio_bgm = null;
+					Kiloton.loadConfig(this.args.ending, this, function() {
+						this.audio_bgm.play();
+					}.bind(this));
+					for (var i = 0; i < this.walls.length; i++) {
+						this.walls[i] = new Wall({
+							distance: this.minDist + ((this.minDist / 3) * (i + 8))
+						});
+						this.walls[i].generatePattern();
+					};
+					this.audio_start.play();
+					_frameCount_levelUp = _frameCount;
+					_frameCount = 0;
+				}
+				this.ctx.fillStyle = "#FFFFFF";
+				this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+				this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+				_frameCount++;
+				_animation_id_ = requestAnimationFrame(_update.bind(this));
+				return;
+			}
+
+			this.interpolate();
 
 			if ((_frameCount % (this.rotationFrequency * 60) == 0) && (Math.floor(Math.random() * 100)) < this.rotationChance)
 			this.angleSpeed *= -1;
@@ -277,7 +307,7 @@ module.exports = Hexagon = (function() {
 			this.hexagon.draw(this.currentBGC[COLOR_DARK], this.currentWallColor, 7, _offset_);
 			if (this.hexagon.size > 50)
 			this.hexagon.size -= 25;
-			this.timer.update(_frameCount, this.currentWallColor);
+			this.timer.update(_frameCount, this.currentWallColor, _frameCount_levelUp);
 
 			if (_isDead)
 			return this.die();
@@ -321,7 +351,7 @@ module.exports = Hexagon = (function() {
 						};
 						window.onkeydown = null;
 						cancelAnimationFrame(_animation_id_);
-						_this.init().play();
+						_this.init(_this.play);
 						return;
 					};
 				};
@@ -343,6 +373,10 @@ module.exports = Hexagon = (function() {
 			}
 			this.cursor.color = _frameCount % 6 < 3 ? this.wallColors[0] : this.wallColors[1];
 			this.cursor.draw(_offset_);
+
+			if (this.angleSpeed == 0 && _frameCount % (1 * 60) == 0) {
+				_offset_ += 15;
+			}
 
 			if (_frameCount > (.6 * 60)) {
 				if (_offset_ < 0) {

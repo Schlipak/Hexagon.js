@@ -23,10 +23,18 @@ var Kiloton = {
 					_this.setAudioSrc(_this.getAudioCtx().createMediaElementSource(_this.audio_bgm));
 					_this.getAudioSrc().connect(_this.getAnalyser());
 					_this.getAudioSrc().connect(_this.getAudioCtx().destination);
-					_this.setAudioData(new Uint8Array(_this.getAnalyser().frequencyBinCount));		
+					_this.setAudioData(new Uint8Array(_this.getAnalyser().frequencyBinCount));
 					_this.setChunkSize(~~(_this.getAudioData().length / 3));
 				} else
-				console.error("HexagonJS @ " + url + ": \"music\" must be a string.");
+					console.error("HexagonJS @ " + url + ": \"music\" must be a string.");
+			}
+
+			if (typeof data.game.musicStart === 'number') {
+				if (data.game.musicStart >= 0) {
+					_this.audio_bgm.currentTime = data.game.musicStart;
+				} else {
+					console.error("HexagonJS @ " + url + ": \"musicStart\" must be positive.");
+				}
 			}
 
 			if (typeof data.game.angleSpeed !== 'undefined') {
@@ -38,10 +46,10 @@ var Kiloton = {
 
 			if (typeof data.game.wallSpeed !== 'undefined') {
 				if (typeof data.game.wallSpeed === 'number') {
-					if (data.game.wallSpeed > 0)
+					if (data.game.wallSpeed >= 0)
 						_this.wallSpeed = data.game.wallSpeed;
 					else
-						console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a not null positive number.");
+						console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a positive number.");
 				} else
 				console.error("HexagonJS @ " + url + ": \"wallSpeed\" must be a number.");
 			}
@@ -58,10 +66,10 @@ var Kiloton = {
 
 			if (typeof data.game.rotationChance !== 'undefined') {
 				if (typeof data.game.rotationChance === 'number') {
-					if (data.game.rotationChance > 0)
+					if (data.game.rotationChance >= 0)
 						_this.rotationChance = data.game.rotationChance;
 					else
-						console.error("HexagonJS @ " + url + ": \"rotationChance\" must be a not null positive number.");
+						console.error("HexagonJS @ " + url + ": \"rotationChance\" must be a positive number.");
 				} else
 				console.error("HexagonJS @ " + url + ": \"rotationChance\" must be a number.");
 			}
@@ -103,7 +111,7 @@ var Kiloton = {
 					if (data.game.wallColors.length == 2) {
 						if (typeof data.game.wallColors[0] === 'string' &&
 							typeof data.game.wallColors[1] === 'string')
-							_this.wallColors = data.game.wallColors;
+								_this.wallColors = data.game.wallColors;
 						else
 							console.error("HexagonJS @ " + url + ": \"wallColors\" must contain strings.");
 					} else
@@ -123,6 +131,33 @@ var Kiloton = {
 					_this.walls[i].generatePattern();
 				};
 			}
+
+			if (typeof data.events === 'object') {
+				for (var i = 0; i < data.events.length; i++) {
+					var body = 'try{';
+					for (var evact in data.events[i]) {
+						if (data.events[i].hasOwnProperty(evact) && evact !== 'time') {
+							if (typeof data.events[i][evact] === 'object') {
+								if (evact === 'backgroundColors') {
+									var tmp = '[["';
+									tmp += data.events[i][evact][0].join('","');
+									tmp += '"],["';
+									tmp += data.events[i][evact][1].join('","');
+									tmp += '"]]';
+									body += 'target["' + evact + '"]=' + tmp + ';';
+								} else {
+									var tmp = '["' + data.events[i][evact].join('","') + '"]';
+									body += 'target["' + evact + '"]=' + tmp + ';';
+								}
+							} else
+								body += 'target["' + evact + '"]=' + data.events[i][evact] + ';';
+						}
+					};
+					body += '}catch(e){console.warn("Timed event '+data.events[i].time+' : " + e);}';
+					var eventCallback = Function('target', body);
+					_this.timer.registerEvent(data.events[i].time, eventCallback);
+				}
+			};
 
 			if (typeof data.levels !== 'undefined')
 				_this.timer.load(data);

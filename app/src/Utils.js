@@ -7,7 +7,7 @@ var Utils = {
 
 		if (depth == 0)
 			return minColor;
-		if (depth == maxDepth)
+		if (depth >= maxDepth)
 			return maxColor;
 
 		var color = "#";
