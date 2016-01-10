@@ -33,5 +33,6 @@ public/
 bower_components/
 
 # Test assets
+*.mp3
 *.ogg
 *.wav
