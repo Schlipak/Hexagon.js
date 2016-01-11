@@ -133,6 +133,7 @@ var Kiloton = {
 			}
 
 			if (typeof data.events === 'object') {
+				_this.timer.flushEvents();
 				for (var i = 0; i < data.events.length; i++) {
 					var body = 'try{';
 					for (var evact in data.events[i]) {
@@ -145,6 +146,10 @@ var Kiloton = {
 									tmp += data.events[i][evact][1].join('","');
 									tmp += '"]]';
 									body += 'target["' + evact + '"]=' + tmp + ';';
+								} else if (evact === 'patterns') {
+									body += 'for(var i=0;i<target.walls.length;i++){'
+									body += 'target.walls[i].setPatterns('
+									body += '[[' + data.events[i][evact].join('],[') + ']]);};'
 								} else {
 									var tmp = '["' + data.events[i][evact].join('","') + '"]';
 									body += 'target["' + evact + '"]=' + tmp + ';';

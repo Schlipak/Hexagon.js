@@ -96,6 +96,10 @@ module.exports = Hexagon = (function() {
 		this.setAudioData = function(data) {_audio_data_ = data;}
 		this.getChunkSize = function() {return _chunk_size_;}
 		this.setChunkSize = function(size) {_chunk_size_ = size;}
+		this.getFrameCount = function() {return _frameCount;}
+		this.setFrameCount = function(c) {_frameCount = c;}
+		this.getFrameCountLvUp = function() {return _frameCount_levelUp;}
+		this.setFrameCountLvUp = function(c) {_frameCount_levelUp = c;}
 
 		if (typeof this.args.config === 'string') {
 			Kiloton.loadConfig(this.args.config, this, function() {
@@ -187,23 +191,23 @@ module.exports = Hexagon = (function() {
 				this.currentWallColor,
 				this.wallColors[0],
 				120,
-				_frameCount - _start
+				(_frameCount + _frameCount_levelUp) - _start
 			);
 			this.currentBGC = [
 				Utils.interpolateColor(
 					this.currentBGC[COLOR_DARK],
 					this.backgroundColors[0][COLOR_DARK],
 					120,
-					_frameCount - _start
+					(_frameCount + _frameCount_levelUp) - _start
 				),
 				Utils.interpolateColor(
 					this.currentBGC[COLOR_LIGHT],
 					this.backgroundColors[0][COLOR_LIGHT],
 					120,
-					_frameCount - _start
+					(_frameCount + _frameCount_levelUp) - _start
 				)
 			];
-			if (_frameCount - _start == 120) {
+			if ((_frameCount + _frameCount_levelUp) - _start == 120) {
 				_backgroundColors = this.backgroundColors;
 				_wallColors = this.wallColors;
 			}
@@ -216,9 +220,9 @@ module.exports = Hexagon = (function() {
 		};
 
 		this.interpolate = function() {
-			var _fc_acc = this.getInterCoef(_frameCount);
+			var _fc_acc = this.getInterCoef(_frameCount + _frameCount_levelUp);
 			if (this.colorsHasChanged()) {
-				_start = _start < _frameCount - 120 ? _frameCount : _start;
+				_start = _start < (_frameCount + _frameCount_levelUp) - 120 ? (_frameCount + _frameCount_levelUp) : _start;
 				this.fadeInterpolate();
 			} else {
 				this.currentWallColor = Utils.interpolateColor(
@@ -245,12 +249,13 @@ module.exports = Hexagon = (function() {
 		};
 
 		var _update = function() {
-			var _ending = this.timer.levelTimings[this.timer.levelTimings.length - 1];
-			if (_frameCount >= (_ending * 60) && _frameCount <= ((_ending + .3) * 60)) {
-				if (_frameCount == (_ending * 60) && typeof this.args.ending === 'string') {
+			if (_frameCount >= (this.timer.ending * 60) && _frameCount <= ((this.timer.ending + .3) * 60)) {
+				if (_frameCount == (this.timer.ending * 60) && typeof this.args.ending === 'string') {
 					this.audio_bgm.pause();
 					this.audio_bgm = null;
 					Kiloton.loadConfig(this.args.ending, this, function() {
+						this.setFrameCountLvUp(this.getFrameCount());
+						this.setFrameCount(0);
 						this.audio_bgm.play();
 					}.bind(this));
 					for (var i = 0; i < this.walls.length; i++) {
@@ -260,8 +265,6 @@ module.exports = Hexagon = (function() {
 						this.walls[i].generatePattern();
 					};
 					this.audio_start.play();
-					_frameCount_levelUp = _frameCount;
-					_frameCount = 0;
 				}
 				this.ctx.fillStyle = "#FFFFFF";
 				this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -273,7 +276,7 @@ module.exports = Hexagon = (function() {
 
 			this.interpolate();
 
-			if ((_frameCount % (this.rotationFrequency * 60) == 0) && (Math.floor(Math.random() * 100)) < this.rotationChance)
+			if (((_frameCount + _frameCount_levelUp) % (this.rotationFrequency * 60) == 0) && (Math.floor(Math.random() * 100)) < this.rotationChance)
 			this.angleSpeed *= -1;
 
 			if (this.audio_bgm) {
@@ -331,7 +334,7 @@ module.exports = Hexagon = (function() {
 			this.wallSpeed = 0;
 
 			if (_frameCount == (.5 * 60))
-			this.wallSpeed = -50;
+				this.wallSpeed = -50;
 			if (_frameCount >= (.8 * 60) && this.hexagon.size < 250) {
 				this.hexagon.size += 50;
 				this.cursor.radius += 50;
@@ -371,7 +374,7 @@ module.exports = Hexagon = (function() {
 					this.walls[i].generatePattern();
 				}
 			}
-			this.cursor.color = _frameCount % 6 < 3 ? this.wallColors[0] : this.wallColors[1];
+			this.cursor.color = (_frameCount + _frameCount_levelUp) % 6 < 3 ? this.wallColors[0] : this.wallColors[1];
 			this.cursor.draw(_offset_);
 
 			if (this.angleSpeed == 0 && _frameCount % (1 * 60) == 0) {

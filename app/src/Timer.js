@@ -114,6 +114,10 @@ module.exports = Timer = (function() {
 			};
 		};
 
+		this.flushEvents = function() {
+			this.eventList = [];
+		}
+
 		this.registerEvent = function(timing, callback) {
 			for (var i = 0; i < this.eventList.length; i++) {
 				if (this.eventList[i].time == timing) {
