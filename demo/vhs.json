@@ -25,8 +25,8 @@
 			"angleSpeed": 2.3,
 			"wallSpeed": 6.5,
 			"rotationChance": 100,
-			"backgroundColors": [["#000000", "#031606"], ["#161402", "#000000"]],
-			"wallColors": ["#0ea12a", "#c7ba09"]
+			"backgroundColors": [["#000000", "#041025"], ["#260202", "#000000"]],
+			"wallColors": ["#339fc7", "#c73333"]
 		},
 		{
 			"time": 62.5,
